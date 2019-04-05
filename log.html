@@ -1,0 +1,391 @@
+﻿## 0_setup/user/default.html
+## 本文档将打造成为单表查看的标准模板。
+
+<%inherit file="base.html" />
+
+<%block name="body1">
+<body>
+<%include file="menu.html" />
+
+<%block name="js">
+    <script type="text/javascript">
+        $(function(){
+	    var hei = $(window).height()-100;
+	    console.log('hei', hei);
+            $('#dg').datagrid({
+	    url: 'Get?_table=${_table}&_log=true'
+	    ,pagePosition: top
+	    //--,height:700
+	    ,height:hei
+	    });
+	//    panel = $('#dg').datagrid('getPanel');
+	//    panel.panel({tools:'#toolbar'});
+	$("body").css("width", $(window).width()); 
+    //	$('#dg').datagrid('getPanel').panel('maximize');
+    });
+    </script>
+</%block>
+
+<%block name="js_func">
+<!-- block js_func @ log -->
+<script type="text/javascript">
+    var columns = [[{field:'id', title:'Id'} ,{field:'content_n',title:'content', formatter:esc_str} ,{field:'name', title:'name'} ,{field:'filename', title:'文件名'} ,{field:'childrens'} ]];
+    function esc_str(str, row, index) {
+	try {
+	return str.substring(0,200).replace(/%/g,"&amp;").replace(/ /g, "&nbsp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")
+	} catch(err) {
+	return str;
+	}
+	//.replace(/&/g,"&amp;");
+	//.replace(/ /g,"&nbsp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
+	try {
+	row['content_n'] = row['content'].substring(0,200).replace(/&/g,"&amp;").replace(/ /g,"&nbsp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
+	//row['content_n'] = '<pre>' + row['content'] + '</pre>';
+	} catch(err) {	    // content is null
+	    row['content_n'] = '';
+	    row['content'] = '';
+	}
+	res = "{filename} {content_n} <br /> <div style='float:right;background-color:#E0ECEF'>"
+	var left = new Array();
+	if (row['content'].length>200 ) {
+	    left.push('<a BBclass="easyui-linkbutton" href="javascript:moreBook(row)">显示全部</a>');
+	}
+	if ('filename' in row && row.filename != "" && row.fileid != '0') {
+	    left.push('<a BBclass="easyui-linkbutton" href="./_download?fileid={fileid}" title="{filename}">下载</a>'.format(row));
+	}
+	res = res + left.join(" ");
+	res += " [#{id}: {state2}, {childrens}/{views} - {name} ({stime}) ] </div></div>"
+	res = res.format(row);
+	return res; }
+    var url;
+    var action=undefined;
+    var action_row = undefined;
+    function saveBook() {
+	function callback(result) {
+	    try {
+		var end = result.lastIndexOf('}');
+		result  = result.substring(0,end+1);
+		result = $.parseJSON(result);
+		// 如果转换出错，就刷新整体表格数据并关闭对话框。
+	    }
+	    catch(err) {
+		$.messager.show({title:'错误，重新刷新表格内容',msg:'返回内容转换JSON对象出错'+err});
+		$('#dg').datagrid('reload');
+		action = undefined;
+		//$('#dlg').dialog('close');
+		console.log('err', err, result);
+		return;
+	    }
+	    // 用这种eval方式，当result中有引号，大小于号等HTML实体符号时，会失败。而如果用$.post方式，则可以直接指定返回JSON对象，但缺点是post无法提交文件上传字段内容！！如果form.submit可以指定返回值是JSON对象就好了！！
+	    // 使用parseJSON方式，当字符串值中有不对称的html标记，或者未关闭的HTML标记，或者不成对的单双引号，都有可能会出现问题，但为了文件上传，只有此此处遇到错误时，干脆刷新整个表格内容为快！
+	    //console.log('SUCCESS', result);
+	    if (result.id) {
+		if (action=='newBook()') {	//新增则刷新全页
+		    //$('#dg').datagrid('reload');
+		    $('#dg').datagrid('insertRow',{index:0, row:result});
+		    $('#dg').datagrid('selectRow', 0);	// 仍然选中了增加之前的第一条记录？
+		} else if (action=='editBook()') {	// 编辑则刷新该记录
+		    var row = $('#dg').datagrid('getSelected');
+		    index = $('#dg').datagrid('getRowIndex',row);
+		    //console.log('main? ', row.id, result.id, row.id==result.id);
+		    if (row.id==result.id) {	//是编辑的主题,则刷新主题
+			console.log('begin..');
+			$('#dg').datagrid('updateRow',{ index:index, row: result });
+			$('#dg').datagrid('fixDetailRowHeight',index);
+			$('#dg').datagrid('collapseRow',index);
+			//$('#dg').datagrid('expandRow',index);
+			//var ddv = $('#view'+row.id);
+			//ddv.datagrid({url:'Get?parentid='+row.id});
+			console.log('编辑涉及两次调用了formatter? ..');
+			console.log(index, row.content);
+			console.log(index, result.content);
+			row = $('#dg').datagrid('getSelected');
+			console.log(index, row.content);
+			// 好像也不用太担心，只是表格显示出来看上去经过了两次转义而已。
+		    } else {
+			//var ddv= $('#dg').datagrid('getRowDetail', index).find('table');
+			var ddv = $('#view'+row.id);
+			//console.log('DDV', ddv);
+			ddv.datagrid({url:'Get?parentid='+row.id});
+			//console.log('reload', ddv);
+		    }
+		    //$('#dg').datagrid('collapseRow',index);
+		    //try {
+			//$('#dg').datagrid('expandRow',index);
+		    //}
+		    //catch(err) {
+			//console.log(err);
+		    //}
+		    $('#dg').datagrid('fixDetailRowHeight',index);
+		} else if (action=='replyBook()') {	// 回复则重新展开该记录
+		    var row = $('#dg').datagrid('getSelected');
+		    index = $('#dg').datagrid('getRowIndex',row);
+		    if (row.state != 'closed') {    // 第一次回复，状态为open或空，不能马上展开。
+			row.state='closed';	//  回复后则状态为可展开
+			$('#dg').datagrid('updateRow', {index:index, row:row});
+		    }
+		    var row = $('#dg').datagrid('getSelected');
+		    var ddv = $('#dg').datagrid('getRowDetail', index).find('table');
+		    ddv2 = $('#view'+row.id);
+		    try {
+			//$('#dg').datagrid('collapseRow',index);
+			//$('#dg').datagrid('expandRow',index);	// 这个展开JS会报错, 但无法追踪:TypeError: a is undefined
+			ddv2.datagrid({url:'Get?parentid='+row.id});
+		    } catch(err) {
+			//ddv.datagrid('load', {url:'Get?parentid='+row.id});
+			console.log(err);
+		    }
+		    $('#dg').datagrid('fixDetailRowHeight',index);
+		}
+	    } else {
+		console.log('No id?', result);
+		$.messager.show( {
+		    title: 'Error',
+		    msg: result
+		});
+	    }
+	    action = undefined;
+	    $('#dlg').dialog('close');
+	}
+	if($('#fm').form('validate')) {
+	    //var formData = new FormData($('#fm')[0]);
+	    //formData.append("name",'tst');
+	    //data2 = $('#fm').serializeArray();
+	    //data2.push($('input[name="filebox"]'));
+
+	    //$.post(url, $('#fm').serializeArray(), callback, 'JSON'); // $.post方式可以直接返回JSON对象，在字段内容里涉及各种转义字符时，仍能很好的显示，但缺点是不能上传文件。
+	    //$.post(url, data2, callback, 'JSON');
+	    $('#fm').form('submit', { url:url ,dataType: 'JSON' ,success:callback });
+	    // 只有form.submit方式，才能上传文件，否则只有单独尝试一个ajaxFileUpload.js文件。
+	    /*
+	    $.ajaxFileUpload( {
+		    url:url, fileElementId: 'filebox', dataType: 'JSON', data: $('#fm').serializeObject(), success: callback
+	    });	// 使用这个插件，虽可以上传文件，未见得返回JSON对象，而且再次编辑时，会报"TypeError: _4bf is undefind.
+	    */	
+	}
+    }
+
+    function moreBook(row) {	// 显示记录的具体信息，双击记录调用，或在记录里的more链接调用，带参数row。
+	console.log('start moreBook..', row);
+	$('#p2-title').html('查看 #'+row.id);
+	$('#filebox').hide();
+	if (row.fileid>0) { $('#fileid').show(); $('#filename').show();
+	} else { $('#fileid').hide(); $('#filename').hide(); }
+	$('#fm').form('load', row);
+	action_row = row;
+	$('.easyui-textbox').textbox('readonly',true);
+	$('.easyui-combobox').combobox('readonly',true);
+	$('#dlg_save').hide();
+	$('#mm-r2').empty();
+	%if cherrypy.request.wsgi_environ['PATH_INFO'].endswith('edit'):	## 如果是edit结尾，则显示功能菜单(新增，回复，修改，删除，保存
+	    $('#mm-r2').menu('appendItem', {text:'新增',iconCls:'icon-add',onclick:newBook});
+	    $('#mm-r2').menu('appendItem', {text:'回复',iconCls:'icon-redo',onclick:replyBook});
+	    $('#mm-r2').menu('appendItem', {text:'修改',iconCls:'icon-edit',onclick:editBook});
+	    $('#mm-r2').menu('appendItem', {text:'保存',iconCls:'icon-save',onclick:saveBook, disabled:true});
+	    $('#mm-r2').menu('appendItem', {text:'删除',iconCls:'icon-remove',onclick:delBook});
+	%endif
+    }
+    function newBook() {    // 新增有可能在主页面的功能菜单中调用，也可能在查看/编辑/回复界面调用
+	$('#p2-title').html('新增');
+	$('#dlg_save').show();
+	$('#fm').form('clear');
+	$('#filebox').show();
+	$('#fileid').hide();
+	$('#filename').hide();
+	$('.easyui-textbox').textbox('readonly',false);
+	$('.easyui-combobox').combobox('readonly',false);
+	url = 'Save?_log=false';
+	// 如果自定义p2右上角的功能菜单？
+	$('#mm-r2').empty();
+	$('#mm-r2').menu('appendItem', {text:'保存', iconCls:'icon-Save', onclick:saveBook });
+	action = 'newBook()';
+    }
+    function editBook() {	// 编辑界面，在查看界面调用
+	row = action_row;
+	$('#p2-title').html('编辑 #'+row.id);
+	$('#dlg_save').show();
+	if (row.fileid==0) {	// 没有文件则显示上传框
+	    $('#filebox').show();
+	    $('#fileid').hide();
+	    $('#filename').hide();
+	} else {
+	    $('#filebox').hide();
+	    $('#fileid').show();
+	    $('#filename').show();
+	}
+	$('.easyui-textbox').textbox('readonly',false);
+	$('.easyui-combobox').combobox('readonly',false);
+	$('#mm-r2').empty();
+	%if cherrypy.request.wsgi_environ['PATH_INFO'].endswith('edit'):	## 如果是edit结尾，则显示功能菜单(新增，回复，修改，删除，保存
+	    $('#mm-r2').menu('appendItem', {text:'保存',iconCls:'icon-save',onclick:saveBook});
+	%endif
+	url = 'Update?_log=false&id='+row.id;
+	action = 'editBook()';
+    }
+    function replyBook() {  // 回复，在查看界面调用
+	row = action_row;
+	$('#p2-title').html('回复 #'+row.id);
+	$('#dlg_save').show();
+	$('#filebox').show();
+	$('#fileid').hide();
+	$('#filename').hide();
+	$('#fm').form('clear');
+	$('.easyui-textbox').textbox('readonly',false);
+	$('.easyui-combobox').combobox('readonly',false);
+	$('#mm-r2').empty();
+	%if cherrypy.request.wsgi_environ['PATH_INFO'].endswith('edit'):	## 如果是edit结尾，则显示功能菜单(新增，回复，修改，删除，保存
+	    $('#mm-r2').menu('appendItem', {text:'保存',iconCls:'icon-save',onclick:saveBook});
+	%endif
+	url = 'Save?_log=flase&parentid='+row.id;
+	action = 'replyBook()';
+    }
+    function delBook() {    // 删除记录， 在查看和编辑界面调用
+	row = action_row;
+	$.messager.confirm('警告','你确认要删除记录#'+row.id+'吗？', function(c) {
+		if(c) {
+		    delBook1();
+		}
+	});
+    }
+    function delBook1() {
+	row = action_row;
+	$.getJSON('Destroy', {id:row.id}, function(json, status, jqr) {
+	    if (status=='success') {
+		index = $('#dg').datagrid('getRowIndex',row);
+		$('#dg').datagrid('reload');
+		//$('#dg').datagrid('reload');
+		//$('#dg').datagrid('fixDetailRowHeight', 1);
+	    }else {
+		console.log('err, ', json, status, jqr);
+	    }
+	});
+    }
+</script>
+</%block>
+
+<%block name="p0_body">
+<div id="toolbar" style="margin:5px width:98%">
+    <%block name="toolbutton" />
+    <%block name="toolsearch" >
+    <div style="float:right;padding:0px">
+	<script language="javascript">
+	    var person = {
+		search: function (value,  kind) {
+		var kw = {};
+		kw[kind] = value;
+		$("#dg").datagrid("load", kw);
+	}}
+	</script>
+	<input id="search" class="easyui-searchbox" value="" style="width:250px;'" prompt='根据相应字段模糊查询' searcher="person.search" menu="#mm" data-options="icons:[{iconCls:'icon-clear', handler: function(e) {$(e.data.target).searchbox('clear'); $('#dg').datagrid('load', {});}
+	}]
+	    ">
+	<div id="mm">
+	    ###% for col in getattr(cfg.db1, _real_table)._desc[:9]:
+	    ##% for col in getattr(_db, _real_table)._desc[:9]:
+	     ## <div data-options="kind: '${col[0]}'">${col[0]}</div>
+	    ##% endfor
+	</div>
+    </div>
+    </%block>
+</div>
+<div style="height:100%">
+    <ul id="tr" data-options="createUrl:'Save?_table=${_table}', updateUrl:'Update?_table=${_table}', destroyUrl:'Destroy?_table=${_table}', dndUrl:'Dnd?_table=${_table}', fit:true, Url:'Tree?_table=${_table}'"></ul>
+    <table id="dg" style="width:98%;" data-options=" rownumbers:true, singleSelect:true, autoRowHeight:true, pagination:true, nowrap:false, pageSize:10, collapsible:false, url:'Get', maximized:false, height:'auto', pagePosition:'bottom', saveUrl:'Save?_table=${_table}', updateUrl:'Update?_table=${_table}', destroyUrl:'Destroy?_table=${_table}', idField:'id', pageSize:10
+	,toolbar:'#toolbar' ">
+    <thead nowrap=false><tr style="nowrap:false;align:center">
+	<th id="dg_check" field="ck" checkbox="true"></th>
+	% for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT3')))._desc[:11]:	# 只显示前面有限个字段
+	## 其实应该根据字段的类型来选择对应的编辑器. id不可编辑, text为textarea, 数字为对应的数字编辑, varchar为text.
+	<th field="${col[0]}"
+	   %if col[0]=='id':
+	    style="nowrap:true;width:auto" 
+	    %elif col[1]==1043:	## varchar
+	    editor="text" formatter="esc_str" width="100"
+	    %elif col[1]==25:	## text
+	    editor="textarea" formatter="esc_str" width="100" 
+	    %elif col[1]==23:	## int
+	    width="100"
+	   %else:
+	   width="100" ${col[1]}
+	   %endif
+	   >${col[0]}</th>
+	% endfor
+    </tr></thead>
+    </table>
+    <%block name="p0_body_add" />
+</div>
+</%block>
+
+<!--
+<%block name="mright">
+    <a href="javascript:void(0)" class="easyui-menubutton" data-options="plain:true,hasDownArrow:true,width:'60px',menu:'#mm-r',menuAlign:'right'">功能</a>
+    <div id="mm-r" class="easyui-menu" data-options="BBitemHeight:30, noline:true, minWidth:50">
+	<div href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true " onclick="javascript:change_table()">选择源</div>
+	<div href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true, BBiconCls:'icon-search'" onclick="javascript:searchBook()">查找</div>
+	%if cherrypy.request.wsgi_environ['PATH_INFO'].endswith('edit'):	## 如果是edit结尾，则显示功能菜单(新增，回复，修改，删除，保存
+	<%block name="mright_edit">
+	<div href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true, BBiconCls:'icon-add'" onclick="javascript:$('#dg').edatagrid('addRow')">增加</div>
+	<div href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true, BBiconCls:'icon-add'" onclick="javascript:$('#dg').edatagrid('destroyRow')">删除</div>
+	<div href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true, BBiconCls:'icon-add'" onclick="javascript:$('#dg').edatagrid('saveRow')">保存</div>
+	<div href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true, BBiconCls:'icon-add'" onclick="javascript:$('#dg').edatagrid('cancelRow')">取消</div>
+	</%block>
+	%endif
+    </div>
+</%block>
+
+<%block name="p2">
+<div id="p2" class="easyui-navpanel">
+    <header>
+	<div class="m-toolbar">
+	    <div id="p2-title" class="m-title">显示#{id}</div>
+	    <div class="m-left">
+		<a href="javascript:void(0)" class="easyui-linkbutton m-back" plain="true" outline="true" style="width:50px" onclick="alert('返回');">返回</a>
+	    </div>
+	    %if cherrypy.request.wsgi_environ['PATH_INFO'].endswith('edit'):	## 如果是edit结尾，则显示编辑菜单
+	    <div class="m-right">
+		<a id="menu1-right" href="javascript:void(0)" class="easyui-menubutton" data-options="plain:true,hasDownArrow:true,width:'60px',menu:'#mm-r2',menuAlign:'left'">功能</a>
+	    </div>
+		<div id="mm-r2" class="easyui-menu" data-options="itemHeight:30, noline:true, minWidth:50">
+		</div>
+	    %endif
+	</div>
+    </header>
+    <form id="fm" method="post" style="margin:0;padding:10px " enctype="multipart/form-data">
+    REAL_TABLE,${_real_table}, _table, ${_table}, HAHA BB
+    ##% for col in getattr(_db, _table)._desc[:11]:
+    % for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT4')))._desc[:11]:	# 只显示前面有限个字段
+    %if col[0] not in ('id','name','stime','root_id','childrens','parentid','state', 'kind', 'fileid','filename'):
+	## 如何增加文件上传栏？
+	<div style="margin-bottom:10px">
+	    ##${col[0]} 
+	    %if col[1]==25:
+	    <input id="${col[0]}" name="${col[0]}" class="easyui-textbox" style="width:100%" labelPostion="left"  data-options="multiline:true,height:'250px',label:'${col[0]}'" />
+	    %else:	# col[1]==1043:
+	    <input id="${col[0]}" name="${col[0]}" class="easyui-textbox" style="width:99%" labelPostion="left"  data-options="multiline:false, label:'${col[0]}'" />
+	    %endif
+	</div>
+    %endif
+    % endfor
+    ##<div id="filebox"><input name="filebox" type="file" BBclass="easyui-filebox" style="width:100%" labelPosition="left" data-options="label:'上传文件'" /></div>
+    ##% for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT1')))._desc[:11]:	## 只显示前面有限个字段
+    % if 'filename' in [col[0] for col in getattr(_db, locals().get('_real_table', locals().get('_table','NOT2')))._desc]:	## 如果有filename字段, 显示上传框，fileid, filename, filename链接。在新增/修改/回复/显示全部时，根据需要显示和隐藏相应部件
+      <div id="filebox"><input name="filebox" class="easyui-filebox" style="width:80%" labelPosition="left" data-options="label:'上传文件'" /></div>
+      <div id="fileid" style="margin-bottom:10px"><input name="fileid" class="easyui-textbox" style="width:100%" labelPosition="left" data-options="label:'fileid',readonly:true, editable: false" /></div>
+      <div id="filename"><input name="filename" class="easyui-textbox" style="width:100%" labelPosition="left" data-options="label:'filename', readonly:true, disabled: false" /></div>
+      % endif
+    </form>
+    <div id="dlg-buttons" style="text-align:center">
+	<a id="dlg_save" href="javascript:void(0)" class="easyui-linkbutton c6" iconCls="icon-ok" onclick="javascript:saveBook()" style="width:90px">保存</a>
+    </div>
+</div>
+</%block>
+-->
+<!-- block dlg2 用以显示复制数据的窗口,平时关闭.只含TEXTAREA和关闭按钮-->
+<%block name='dlg2'>
+<div id='dlg2' class="easyui-dialog" style="width:200px" closed="true" title='请点击复制按钮' data-options="closable:true, doSize:true">
+    <button id="mybtn" onclick="$('#textarea').focus();$('#textarea').select();document.execCommand('copy'); $('#dlg2').dialog('close'); ">复制</button>
+    <textarea id="textarea" style="display:block"></textarea>
+</div>
+</%block>
+</body>
+</%block>

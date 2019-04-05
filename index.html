@@ -1,0 +1,54 @@
+﻿## -*- coding: utf-8	-*-
+## <!-index.html 首页主界面文件，主要展示框架->
+<%inherit file="base.html" />
+
+<%block name="body1">
+<body class="easyui-layout" style="overflow:hidden">
+<div data-options="region:'north',border:false" style="height:40px;background:#B3DFDA;padding:10px">
+   ##<div style="height:auto; background:#B3DFDA;padding:10px 1% 10px 1%;align:center;z-index:999;position:fixed;top:0; left:0;width:98% ">
+    <div style="float:left;BBwidth:240px;float:top">
+	<a class="easyui-menubutton" data-options="plain:true,menu:'#mm1'">快速通道</a>
+##	<a class="easyui-menubutton" data-options="plain:true, menu:'#nav2'">站内导航</a>
+    </div> 
+
+    <div style="float:right;BBwidth:240px" align="right">
+	<a class="easyui-linkbutton" data-options="plain:true, ">右上角区域</a>
+    </div> 
+
+    <div id="center" align="center" style="float:middle">
+	<a class="easyui-linkbutton" data-options="plain:true" href='/'>蜂鸟企业信息管理系统</a>
+    </div>
+    ##</div>
+</div>
+<div data-options="region:'west',split:true,title:'系统菜单'" style="width:180px;padding:2px;">
+    <ul class="easyui-tree" data-options="plain: true, animate:false, lines:true, url:'/left_tree', method:'get', formatter: tree_load" style="padding:2px" id="nav1" >
+    </ul>
+    <script language="javascript">
+        function tree_load(node) {
+            ##s = '<a class="easyui-linkbutton" data-options="plain:true" href="'+node.url+'">'+ node.text + '</a>';
+	    s1 = '<a class="easyui-linkbutton" data-options="plain:true" onclick=addTab("' + node.text + '", "' + node.url + '")  >' + node.text  + '</a>';
+	    s = '<a class="easyui-linkbutton" data-options="plain:true" onclick=addTab("' + node.text + '","' + node.url + '") >' + node.text  + '</a>';
+            return s;
+        }
+    </script>
+</div>
+##<div data-options="region:'east',split:true,collapsed:true,title:'East'" style="width:100px;padding:10px;">east region</div>
+##<div data-options="region:'south',border:false" style="height:50px;background:#A9FACD;padding:10px;">south region</div>
+<div data-options="region:'center'" style="overflow:visible">
+    <div class="easyui-tabs" id="tt" style="overflow:visible;height:100%;width:100%" data-options="fit:true, justified:false, plain:false">
+	<div title="首页" data-options="closable:true">
+	    <iframe scrolling="hidden" name="content" frameborder="0" src="login" style="width:100%;height:100%;overflow:hidden">
+	    </iframe>
+	</div>
+    </div>
+</div>
+
+<div id="mm1" style="">
+    ##%for child in cfg.fast_way:	<!-- 尽量不要在HTML文档里调用其他模板，而只通过self._dic返回字典 -->
+##	<div><a class="easyui-linkbutton" href="${child[1]}" target="_blank" data-options="plain:true" style="border:0;">${child[0]}</a></div>
+##    %endfor
+    <div><a class="easyui-linkbutton" href="/8_nav/" target="_blank" data-options="plain:true" style="border:0;">更多...</a></div>
+</div>
+
+</body>
+</%block>

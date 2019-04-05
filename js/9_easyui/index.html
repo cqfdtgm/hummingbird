@@ -1,0 +1,32 @@
+﻿## /easyui/index1.html
+
+<%inherit file="base.html" />
+
+<body class="easyui-layout" style="width:100%;height:100%">
+
+<div data-options="region:'west',split:true,title:'easyui demo'" style="width:132px;padding-left:0px;overflow-x:auto;overflow-y:visible" id="left1">
+    <ul class="easyui-datalist" title="目录列表" lines="true">
+    %for x in left_tree[0]['children']:
+    <li><a href="${x['text']}" target="easyui_demo" class="easyui-linkbutton" data-options="plain:true" style="display:block;align:left;border:0">${x['text']}</a></li>
+    %endfor
+    </ul>
+</div>
+
+<div data-options="region:'center',title:'二级'" style="overflow:visible;width:100%">
+
+    <div class="easyui-layout" data-options="title:'test',fit:true,width:'100%'">
+        <div data-options="region:'west',title:'文件列表'" style="width:182px;overflow:visible">
+        <iframe scrolling="visible" id="easyui_demo" name="easyui_demo" frameborder="0" src="" style="height:100%;overflow:none;width:100%">
+        </iframe> 
+       </div>
+
+        <div data-options="region:'center',title:'内容'" style="width:300px;overflow:visible;word-break:break-all;word-wrap:break-word">
+        <iframe scrolling="visible" id="easyui_east" name="easyui_east" frameborder="0" src="" style="width:100%;height:100%;overflow:auto;word-break:break-all;word-wrap:break-word">
+        </iframe> 
+        </div>
+
+    </div>
+
+</div>
+
+</body>

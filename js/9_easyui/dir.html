@@ -1,0 +1,23 @@
+﻿## /easyui/index1.html
+
+<%inherit file="base.html" />
+
+<%block name="header">
+    <script type="text/javascript">
+        $(function () {
+                parent.frames['easyui_east'].location="demo-mobile/${dir}/basic.html";
+        })
+    </script>
+</%block>
+            
+<body style="padding:1px">
+    <ul class="easyui-datalist" title="${dir}" lines="true">
+    %for x in files:
+    ##<li><a href="/src?path=/9_easyui/demo-mobile/${dir}/${x}" target="easyui_east" class="easyui-linkbutton" style="">源</a>
+    <li><a href="/src?path=/9_easyui/demo-mobile/${dir}/${x}" target="easyui_east" class="easyui-linkbutton" style="">源</a>
+    ##<a href="/9_easyui/demo-mobile/${dir}/${x}" target="easyui_east" class="easyui-linkbutton" data-options="plain:true" style="border:0;display:inline;align:left">${x}</a> 
+    <a href="/9_easyui/demo-mobile/${dir}/${x}" target="_blank" class="easyui-linkbutton" data-options="plain:true" style="border:0;display:inline;align:left">${x}</a> 
+    </li>
+    %endfor
+    </ul>
+</body>

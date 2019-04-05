@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C/DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="${charset}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>${title}</title>
+    <link rel="shortcut icon" href="/images/favicon.ico">
+    <link rel="bookmark" href="/images/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="${easyui}/themes/default/easyui.css">
+    ##<link rel="stylesheet" type="text/css" href="${easyui}/themes/metro/easyui.css">
+    ##<link rel="stylesheet" type="text/css" href="${easyui}/themes/mobile.css">
+    <link rel="stylesheet" type="text/css" href="${easyui}/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="${easyui}/themes/color.css">
+    <link rel="stylesheet" type="text/css" href="${easyui}/demo/demo.css">
+    <script type="text/javascript" src="${easyui}/jquery.min.js"></script>
+    <script type="text/javascript" src="${easyui}/jquery.easyui.min.js"></script>
+    ##<script type="text/javascript" src="${easyui}/jquery.easyui.mobile.js"></script>
+    <script type="text/javascript" src="${easyui}/locale/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="${easyui}/jquery.edatagrid.js"></script>
+    <script type="text/javascript" src="${easyui}/jquery.etree.js"></script>
+    <script type="text/javascript" src="${easyui}/datagrid-detailview.js"></script>
+    ##<script type="text/javascript" src="${easyui}/easyloader.js"></script>
+    ## easyloader 或会导致移动访问界面出现错位？
+    <script type="text/javascript" src="${easyui}/ajaxfileupload.js"></script>
+    <script type="text/javascript" src="/js/my_js.js"></script>
+    <script type="text/javascript" src="/js/jquery.md5.js"></script>
+
+    <style type="text/css">
+	<!--
+	a:link {  color: #000000; text-decoration: none}
+	a:visited {  color: #000000; text-decoration: none}
+	a:hover {  color: #000000; text-decoration: none}
+	body {font-size: 14px }
+	-->
+    </style> 
+
+    <%block name="header" />
+</head>
+
+<%block name='body1' />
+##${self.body()}
+
+</html>

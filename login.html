@@ -1,0 +1,140 @@
+﻿## 0_setup/user/default.html
+##<%include file="base.html" />
+<%inherit file="base.html" />
+##<body>
+##<% url = cherrypy.request.wsgi_environ['PATH_INFO'] %>
+##path_info: ${cherrypy.request.wsgi_environ['PATH_INFO']}
+
+## ${parent.body()}
+
+<%block name="js_func">
+<script language="javascript">
+    function fmtTh(val, row) {
+        return '<span class="tdth" style="width:\'100%\';font-weight:bold;">'+val+'</span>';
+    };
+    $.messager.show({title:'消息',
+    	    msg:'${msg}',
+    	    timeout: 0
+    	    });
+</script>
+</%block>
+##</body>
+
+<%block name="body1">
+<body>
+<%include file="menu.html" />
+<div style="text-align:center;margin-bottom:10px;padding:40px 10px 10px 10px">
+    <form name="login_form" id="login_form" class="easyui-form" method="post" data-options="novalidate:false" action="">
+	<div style="margin-bottom:20px">
+	<input name="name" id="name" class="easyui-textbox" label="用户名" style="width:300px;height:40px;padding:12px" data-options="prompt:'用户名',iconCls:'icon-man',iconWidth:38,required:true" validType="length[2,10]" prompt="用户名长度为2-10位" invalidMessage="用户名由字母,数字,汉字和下划线组成,2-20长度,一个汉字长度也为1" missingMessage="用户名必须输入"
+	    %if not _sess.get('user','访客_').startswith('访客_'):
+	    value = "${_sess.get('user')}" readonly disabled="true"
+	    %elif _sess.get('tmp_user','')!='':
+	    value = ${_sess['tmp_user']}
+	    %endif
+	    >
+	</div>
+	<div>
+	<input name="password" id="password" 
+	% if _sess.get('user','访客_').startswith('访客_'):
+	    label="密码"
+	%else:
+	    label="新密码"
+	%endif
+	class="easyui-textbox" type="password" style="width:300px;height:40px;padding:12px" data-options="prompt:'密码为6-20位',iconCls:'icon-lock',iconWidth:38" validType="length[6,20]" missingMessage="登录时必须输入密码" 
+	    %if not _sess.get('user','访客_').startswith('访客_'):
+	    value = "" 
+	    %endif
+	    >
+	</div>
+	<input type="hidden" name="sub" value="init sub" />
+    ##<tr style="height:40px"><td colspan="2">${msg}</td><td></tr> 
+</form>
+</div>
+
+<div style="text-align:center;margin-bottom:10px;padding:10px 10px 10px 10px">
+    % if _sess.get('user','访客_').startswith('访客_'):
+    <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" style="width:150px;padding:5px 0px" onclick="$('#password').textbox({'required':true});if($('#login_form').form('validate')) { document.login_form.sub.value='登录';document.login_form.submit();}" title="汉字算1个字符长度"><span style="font-size:14px">登录</span></a>
+    <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" style="width:150px;padding:5px 0px" onclick="$('#name').textbox({'required':true});$('#password').textbox({'required':false});if($('#login_form').form('validate')) {document.login_form.sub.value='找回密码'; 
+	document.login_form.submit()};" title="若绑定手机,邮箱, 则向其发送临时密码用于登录。临时密码暂存在服务器内存中，登录后可修改密码。不登录或不修改，原密码并不会变动，以防恶意重置。"> <span style="font-size:14px;">找回密码</span> </a>
+    % else:
+    <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" style="width:150px;padding:5px 0px" onclick="$('#password').textbox({'required':false});$('#name').textbox({'required':false});document.login_form.sub.value='退出登录'; document.login_form.submit();" title="汉字算1个字符长度"><span style="font-size:14px">退出登录</span></a>
+    <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" style="width:150px;padding:5px 0px" onclick="$('#password').textbox({'required':true}); if($('#login_form').form('validate')) {document.login_form.sub.value='修改密码'; document.login_form.submit()};" title="注意在上面的密码输入框填写新的密码"> <span style="font-size:14px;">修改密码</span> </a>
+    <div style="padding:10px"></div>
+
+<div class="easyui-accordion" style="width:'100%';height:'100%';">
+<div style="padding:10px;width:100%" title="个人信息及认证情况" iconCls="icon-man">
+    <table class="easyui-datagrid" data-options="selected:false,width:'100%',pagination:true,fitColumns:true,pagination:false,showHeader:false,fitColumns:true, multiSelect:false" style="padding: 10px 10px 10px 10px;">
+        <thead> <tr>
+                <th data-options="field:'a',formatter:fmtTh">a</th>
+                <th field="b">b</th>
+                <th data-options="field:'c',formatter:fmtTh">c</th>
+                <th field="d">d</th>
+                <th data-options="field:'e',formatter:fmtTh">e</th>
+                <th field="f">f</th>
+            </tr>
+        </thead> <tbody>
+            <tr><td>用户名</td><td>${user['name']}</td>
+                <td>用户序号</td><td>${user['id']}(可用于快速登录)</td>
+                <td>密码</td><td>${user['password']}</td>
+            </tr>
+            <tr><td>登录时间</td><td>${user['login_time']}</td>
+                <td>登录IP</td><td>${user['ip']}</td>
+                <td>上次登录退出时间</td><td>${user['logout_time']}</td></tr>
+            <tr><td>注册时间</td><td>${user['reg_time']}</td>
+                <td>注册IP</td><td>${user['reg_ip']}</td>
+                <td>注册浏览器信息</td><td>${user['reg_ie']}</td></tr>
+        </tbody>
+</table></div>
+
+<div title="实名制认证(${user['cer_flag']})" data-options="iconCls:'${user['cer_flag']=='已认证' and 'icon-ok' or 'icon-cancel'}'" style="padding:10px;">
+	<form name="cer" action="" target="_self">
+    <table BBclass="easyui-datagrid" data-options="selected:false,width:'100%',pagination:true,fitColumns:true,pagination:false,showHeader:false,fitColumns:true, multiSelect:false">
+        <tr><td>身份证号码</td><td style="padding: 0px"><input name="cer_no" value="${user['cer_no']}" style="width:96%" ></td>
+            <td>实名制姓名</td><td style="padding:0"><input name="cer_name" value="${user['cer_name']}" style="width:96%"></td></tr>
+        <tr><td>CRM验证结果</td><td>${user['cer_crm']}</td><th>身份证复印件/照片电子档案</th><td></td></tr>
+	<tr><td data-options="rowspan:4" align="center"><input name="sub" type="submit" class="BBeasyui-linkbutton" value="${user['cer_flag']=='已认证' and '实名制认证取消' or '实名制认证'}" style="align:center"></input></td>
+    </table>
+    </form>
+</div>
+<div title="邮箱认证(${user['mail_flag']})" data-options="iconCls:'${user['mail_flag']=='已认证' and 'icon-ok' or 'icon-cancel'}'" style="padding:10px;">
+    邮箱认证方法: 在下面填写邮箱地址, 然后点击右上角的"申请认证", 系统会保存你的邮箱地址, 并向你发送一封包含随机认证码的邮件. 再在后面填写认证码, 点击右上角的"验证码提交", 如果吻合, 认证通过.  
+        <table>
+	    <form name="mail">
+                <tr><th>邮箱地址</th><td><input name="email" value="${user['email']}"></input></td>
+		    <td><input name="sub" type="submit" class="BBeasyui-linkbutton" data-options="iconCls:'icon-ok'" value="${user['mail_flag']=='已认证' and '发送取消邮箱绑定验证码' or '提交邮箱并发送验证码'}"></input></td>
+        </tr>
+            </form>
+                <form name="mail_ver">
+            <tr>
+                <th>邮箱验证码</th><td><input name="mail_code"></input></td>
+		<td><input name="sub" type="submit" class="BBeasyui-linkbutton" data-options="iconCls:'icon-ok'" value="${user['mail_flag']=='已认证' and '取消邮箱绑定' or '申请邮箱绑定'}"></input></td>
+                </tr>
+    </form></table>
+</div>
+
+<div title="手机短信认证(${user['phone_flag']})" data-options="iconCls:'${user['phone_flag']=='已认证' and 'icon-ok' or 'icon-cancel'}'" style="padding:10px;">
+    <table>
+    <form name="pro_phone">
+	<tr><th>手机号码</th><td><input name="phone" value="${user['phone']}"></input></td><td><input name="sub" type="submit" class="BBeasyui-linkbutton" value="${user['phone_flag']=='已认证' and '发送取消手机绑定验证码' or '提交手机号码并发送验证短信'}"></td></tr>
+    </form>
+    <form name="phone_ver">
+	<tr><th>手机验证码</th><td><input name="phone_code" value="${user['phone_code']}"></input></td><td><input name="sub" type="submit" class="BBeasyui-linkbutton" value="${user['phone_flag']=='已认证' and '取消手机绑定' or '申请手机绑定'}"></td></tr>
+    </form>
+    </table>
+</div>
+
+<div title="IP绑定认证(${user['ip_flag']})" data-options="iconCls:'${user['ip_flag']=='已认证' and 'icon-ok' or 'icon-cancel'}'" style="padding:10px;">
+    <table>
+    <tr><td colspan="2">认证条件:个人姓名是电脑名称的一部分；该IP尚未有其他用户进行实名制认证;该MAC地址尚未有其他用户认证. 完成本认证后, 本IP只能登录两个用户: 指定匿名用户和绑定认证用户. 当IP, MAC, 电脑名称三者之一发生变化时, 本认证会失效.
+		<p> 每次登录系统时, 系统会随后对登陆IP进行一次扫描, 获得该IP的MAC, 名称, 群组等信息. 因防火墙或路由器原因, 部分IP扫描不到此信息. 无此部分信息的IP不能进行IP认证. </td></tr>
+    <tr><th>电脑IP信息认证</th><td>未认证/已认证</td></tr>
+    </table></div>
+</div>
+</div>
+    % endif
+##</div>
+</div>
+</body>
+</%block>
+
