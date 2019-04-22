@@ -10,7 +10,6 @@ class MyRecord(object):
 
     def __init__(self, data, columns):
         data = [(type(i)==array.array and [i.tostring()] or [i])[0] for i in data]
-        #[self.__setattr__(i,j) for i,j in zip(_columns, data)]
         [x for x in map(self.__setattr__, columns, data)]
 
 class MyTable(object):
@@ -18,10 +17,11 @@ class MyTable(object):
     表都通过db.table的形式调用，在db中定义，而不是直接调用模块中的定义"""
     _primary_key = 'id'
 
-    def __init__(self, _id=None, _table="", _select_columns='', rows=10, page=1, *k, **kw):
+    def __init__(self, _id=None, _table="", _select_columns='', _values_1=True, rows=10, page=1, *k, **kw):
         if _id is not None:
             kw[self._primary_key] = _id
         self.rows, self.page = rows, page-1
+        self._values_1 = _values_1
         self.__dict__['_table'] = _table or self.__class__.__name__
         self._select_columns = _select_columns.split(',') if _select_columns else self.__class__._columns[:]   # self.__class__.columns 必须在类定义时获取表的全量字段
         self._columns = [i.strip() for i in self._select_columns]
@@ -29,29 +29,17 @@ class MyTable(object):
         self._select(*k, **kw)
 
     def _select(self, *k, **kw):
-        print('k,kw in _select: ', k, kw)
         sql = "select %s from %s " % (','.join(self._select_columns), self._table)
-        print('2k,kw in _select: ', k, kw)
-        if len(kw)==0:
-            pass
-            #sql += " limit(%s,%s) " % (self.page*self.rows, self.rows)
-        else:
+        self._values = []
+        if len(kw):
             sql += " where "
             self._where_list, self._values = self._where_process(**kw)
-            self._where = " and ".join(self._where_list)
             sql += " and ".join(self._where_list)
-        sql += " limit(%s,%s) " % (self.page*self.rows, self.rows)
-        print('3k,kw in _select: ', k, kw)
-        #sql = sql.replace('%s', "'%s'") % tuple(values)
+        if self.rows > 0:
+            sql += " limit(%s,%s) " % (self.page*self.rows, self.rows)
         sql = sql.replace('%s','?') # 行云的占位符是 ?
-        print('SQL in _select:' , sql, self._values) 
-        try:
-            result = self._db._execute(sql, self._values)
-            self.__dict__['_data'] = result['data']
-        except:
-            print('SQL:', sql)
-            traceback.print_exc()
-            raise
+        result = self._db._execute(sql, self._values)
+        self.__dict__['_data'] = result['data']
 
     def _where_process(self, *k, **kw):
         """将关键字参数处理成为条件对，以便扩展到SQL语句中去"""
@@ -60,12 +48,6 @@ class MyTable(object):
         where = []
         values = []
         for column,value in kw.items():
-            """
-            if '(' not in column :
-                column = aa+column
-            else:
-                column = column.replace('(','('+aa)
-                """
             if type(value) in (type(()),type([])):
                 """if value is a list or a tuple, replace the '=' with 'in'. if the length is 1, then use '=' still."""
                 # 20150703: add by tgm ,  支撑pgsql的大小写模糊查询
@@ -76,7 +58,6 @@ class MyTable(object):
                 # 增加sqlite3的全文索引
                 elif len(value)==2 and value[0]=='match' and self._db_type=='sqlite':
                     where.append("%s %s '%s' " % (column, value[0], ' '.join('%s' % i for i in value[1].split(' '))))
-                    #print where[0]
                 elif len(value)==2 and value[0]=='is':  # is noll, is not null
                     where.append(" %s is %s " % (column, value[1]))
                 elif len(value)==2 and value[0] == 'not in':
@@ -124,7 +105,6 @@ class MyTable(object):
     def __getattr__( self, name ):
         """return the value of the column in table, of course, name is not a proprity of the class, but is one of the table columns."""
 
-        #print('Get col', self, name)
         if name in self.__dict__:
             return self.__dict__[name]
         try:
@@ -179,11 +159,11 @@ class db(object):
         self.Table._db = self
     
     def __getattr__(self, table):
-        tables = self.Table(_select_columns="table_name, owner, table_type, schema_name, database_name, type_name", table_name=table.upper(), _table="V$USER_TABLES", _debug=1)
+        tables = self.Table(_select_columns="table_name, owner, table_type, schema_name, database_name, type_name", table_name=table.upper(), _table="V$USER_TABLES", _debug=1, rows=-1)
         if not len(tables):
             raise AttributeError("'db' object has no arribute '%s'" % table)
         table_cls = type(table, (self.Table, ), {})
-        cols = self.Table(_table="v$user_tab_columns", table_name=table.upper(), schema_name=tables[0].schema_name, _select_columns="table_name,data_type,data_size,schema_name,database_name,column_type,column_name")
+        cols = self.Table(_table="v$user_tab_columns", table_name=table.upper(), schema_name=tables[0].schema_name, _select_columns="table_name,data_type,data_size,schema_name,database_name,column_type,column_name", rows=-1)
         table_cls._desc = [[i.column_name.lower(), i.data_type, i.data_size] for i in cols]
         table_cls._columns = [i.column_name.lower() for i in cols]
         self.__dict__[table] = table_cls
@@ -243,5 +223,6 @@ if __name__ == '__main__':
     t._primary_key = 'acc_nbr'
     res = t('18983306330')
     print(len(res))
+    print(res.acc_nbr, res.user_name)
     sys.exit()
 

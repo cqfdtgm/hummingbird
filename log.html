@@ -280,10 +280,10 @@
 	}]
 	    ">
 	<div id="mm">
-	    ###% for col in getattr(cfg.db1, _real_table)._desc[:9]:
-	    ##% for col in getattr(_db, _real_table)._desc[:9]:
-	     ## <div data-options="kind: '${col[0]}'">${col[0]}</div>
-	    ##% endfor
+	    ### for col in getattr(cfg.db1, _real_table)._desc[:9]:
+	    ## for col in getattr(_db, _real_table)._desc[:9]:
+	     ## <div data-options="kind: '$  {col[0]}'"># {col[0]}</div>
+	    ## endfor
 	</div>
     </div>
     </%block>
@@ -294,22 +294,22 @@
 	,toolbar:'#toolbar' ">
     <thead nowrap=false><tr style="nowrap:false;align:center">
 	<th id="dg_check" field="ck" checkbox="true"></th>
-	% for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT3')))._desc[:11]:	# 只显示前面有限个字段
+     for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT3')))._desc[:11]:	# 只显示前面有限个字段
 	## 其实应该根据字段的类型来选择对应的编辑器. id不可编辑, text为textarea, 数字为对应的数字编辑, varchar为text.
-	<th field="${col[0]}"
-	   %if col[0]=='id':
+	<th field="# col[0]}"
+	   if col[0]=='id':
 	    style="nowrap:true;width:auto" 
-	    %elif col[1]==1043:	## varchar
+	    elif col[1]==1043:	## varchar
 	    editor="text" formatter="esc_str" width="100"
-	    %elif col[1]==25:	## text
+	    elif col[1]==25:	## text
 	    editor="textarea" formatter="esc_str" width="100" 
-	    %elif col[1]==23:	## int
+	    elif col[1]==23:	## int
 	    width="100"
-	   %else:
-	   width="100" ${col[1]}
-	   %endif
-	   >${col[0]}</th>
-	% endfor
+	   else:
+	   width="100" # {col[1]}
+	   endif
+	   ># {col[0]}</th>
+	 end for
     </tr></thead>
     </table>
     <%block name="p0_body_add" />
@@ -351,28 +351,29 @@
 	</div>
     </header>
     <form id="fm" method="post" style="margin:0;padding:10px " enctype="multipart/form-data">
-    REAL_TABLE,${_real_table}, _table, ${_table}, HAHA BB
-    ##% for col in getattr(_db, _table)._desc[:11]:
-    % for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT4')))._desc[:11]:	# 只显示前面有限个字段
-    %if col[0] not in ('id','name','stime','root_id','childrens','parentid','state', 'kind', 'fileid','filename'):
+    #REAL_TABLE,${_real_table}, _table, ${_table}, HAHA BB
+    ## for col in getattr(_db, _table)._desc[:11]:
+    ## for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT4')))._desc[:11]:	# 只显示前面有限个字段
+    ##col='a'
+    ##if col[0] not in ('id','name','stime','root_id','childrens','parentid','state', 'kind', 'fileid','filename'):
 	## 如何增加文件上传栏？
 	<div style="margin-bottom:10px">
-	    ##${col[0]} 
-	    %if col[1]==25:
-	    <input id="${col[0]}" name="${col[0]}" class="easyui-textbox" style="width:100%" labelPostion="left"  data-options="multiline:true,height:'250px',label:'${col[0]}'" />
-	    %else:	# col[1]==1043:
-	    <input id="${col[0]}" name="${col[0]}" class="easyui-textbox" style="width:99%" labelPostion="left"  data-options="multiline:false, label:'${col[0]}'" />
-	    %endif
+	    ### {col[0]} 
+	    if col[1]==25:
+	    <input id="# {col[0]}" name="# {col[0]}" class="easyui-textbox" style="width:100%" labelPostion="left"  data-options="multiline:true,height:'250px',label:'# {col[0]}'" />
+	    else:	# col[1]==1043:
+	    <input id="# {col[0]}" name="# {col[0]}" class="easyui-textbox" style="width:99%" labelPostion="left"  data-options="multiline:false, label:'# {col[0]}'" />
+	    endif
 	</div>
-    %endif
-    % endfor
+    ##%endif
+    ## endfor
     ##<div id="filebox"><input name="filebox" type="file" BBclass="easyui-filebox" style="width:100%" labelPosition="left" data-options="label:'上传文件'" /></div>
-    ##% for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT1')))._desc[:11]:	## 只显示前面有限个字段
-    % if 'filename' in [col[0] for col in getattr(_db, locals().get('_real_table', locals().get('_table','NOT2')))._desc]:	## 如果有filename字段, 显示上传框，fileid, filename, filename链接。在新增/修改/回复/显示全部时，根据需要显示和隐藏相应部件
+    ## for col in getattr(_db, locals().get('_real_table',locals().get('_table','NOT1')))._desc[:11]:	## 只显示前面有限个字段
+    # if 'filename' in [col[0] for col in getattr(_db, locals().get('_real_table', locals().get('_table','NOT2')))._desc]:	## 如果有filename字段, 显示上传框，fileid, filename, filename链接。在新增/修改/回复/显示全部时，根据需要显示和隐藏相应部件
       <div id="filebox"><input name="filebox" class="easyui-filebox" style="width:80%" labelPosition="left" data-options="label:'上传文件'" /></div>
       <div id="fileid" style="margin-bottom:10px"><input name="fileid" class="easyui-textbox" style="width:100%" labelPosition="left" data-options="label:'fileid',readonly:true, editable: false" /></div>
       <div id="filename"><input name="filename" class="easyui-textbox" style="width:100%" labelPosition="left" data-options="label:'filename', readonly:true, disabled: false" /></div>
-      % endif
+      # endif
     </form>
     <div id="dlg-buttons" style="text-align:center">
 	<a id="dlg_save" href="javascript:void(0)" class="easyui-linkbutton c6" iconCls="icon-ok" onclick="javascript:saveBook()" style="width:90px">保存</a>
